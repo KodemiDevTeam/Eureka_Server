@@ -1,0 +1,13 @@
+server:
+  port: 8761
+
+spring:
+  application:
+    name: service-registry
+
+eureka:
+  instance:
+    hostname: 172.18.6.203
+  client:
+    register-with-eureka: false
+    fetch-registry: false
