@@ -12,19 +12,12 @@ pipeline {
         MAVEN_HOME = '/usr/share/maven'
         PATH = "/opt/java/openjdk/bin:/usr/share/maven/bin:/usr/bin:/bin:/usr/local/bin"
 
-        SONAR_PROJECT_KEY  = 'UserService_Dev'
-        SONAR_PROJECT_NAME = 'UserService_Dev'
+        // Updated specifically for the Eureka Server project
+        SONAR_PROJECT_KEY  = 'Eureka_Server'
+        SONAR_PROJECT_NAME = 'Eureka_Server'
     }
 
     stages {
-
-        /* ================= VERSION CHECK ================= */
-
-        stage('CHECK VERSION') {
-            steps {
-                echo "NEW PIPELINE VERSION APPLIED"
-            }
-        }
 
         /* ================= CLEAN ================= */
 
@@ -42,6 +35,14 @@ pipeline {
             }
         }
 
+        /* ================= TRIGGER INFO ================= */
+
+        stage('Trigger Info') {
+            steps {
+                echo "Build triggered by: ${currentBuild.getBuildCauses()}"
+            }
+        }
+
         /* ================= DEBUG ================= */
 
         stage('Debug Workspace') {
@@ -55,16 +56,15 @@ pipeline {
             }
         }
 
-        /* ================= BUILD ================= */
+        /* ================= BUILD + TEST ================= */
 
-        stage('Build (No Tests)') {
+        stage('Build & Test (with Coverage)') {
             steps {
-                dir('service-registry') {
+                catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
                     sh '''
-                        echo "===== BUILD WITHOUT TESTS ====="
+                        echo "===== BUILD + TEST ====="
 
-                        mvn clean install \
-                        -Dmaven.test.skip=true \
+                        mvn clean verify \
                         -Deureka.client.enabled=false \
                         -Dspring.cloud.discovery.enabled=false
                     '''
@@ -72,25 +72,33 @@ pipeline {
             }
         }
 
+        /* ================= CHECK JACOCO ================= */
+
+        stage('Check JaCoCo Report') {
+            steps {
+                sh '''
+                    echo "===== CHECKING JACOCO ====="
+                    ls -la target/site/jacoco || echo "JaCoCo NOT FOUND"
+                '''
+            }
+        }
+
         /* ================= SONAR ================= */
 
-        stage('SonarQube Analysis (No Tests)') {
+        stage('SonarQube Analysis') {
             steps {
-                dir('service-registry') {
-                    withSonarQubeEnv('SonarQube2') {
-                        withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
-                            sh '''
-                                echo "===== SONAR ANALYSIS ====="
+                withSonarQubeEnv('SonarQube2') {
+                    withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
+                        sh '''
+                            echo "===== SONAR ANALYSIS ====="
 
-                                mvn sonar:sonar \
-                                -Dsonar.projectKey=$SONAR_PROJECT_KEY \
-                                -Dsonar.projectName=$SONAR_PROJECT_NAME \
-                                -Dsonar.login=$SONAR_TOKEN \
-                                -Dsonar.coverage.exclusions=** \
-                                -Dsonar.tests= \
-                                -Dsonar.test.exclusions=**
-                            '''
-                        }
+                            mvn sonar:sonar \
+                            -Dsonar.projectKey=$SONAR_PROJECT_KEY \
+                            -Dsonar.projectName=$SONAR_PROJECT_NAME \
+                            -Dsonar.login=$SONAR_TOKEN \
+                            -Dsonar.java.binaries=target/classes \
+                            -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+                        '''
                     }
                 }
             }
@@ -110,21 +118,17 @@ pipeline {
 
         stage('OWASP Dependency Check') {
             steps {
-                dir('service-registry') {
-                    withCredentials([string(credentialsId: 'nvd-api-key', variable: 'NVD_KEY')]) {
+                withCredentials([string(credentialsId: 'nvd-api-key', variable: 'NVD_KEY')]) {
 
-                        sh '''
-                            echo "===== RUNNING OWASP CHECK ====="
-                        '''
+                    sh 'echo "===== RUNNING OWASP CHECK ====="'
 
-                        dependencyCheck(
-                            additionalArguments: "--nvdApiKey ${NVD_KEY} --format XML --out . --disableOssIndex",
-                            odcInstallation: 'Default'
-                        )
-                    }
-
-                    dependencyCheckPublisher pattern: 'dependency-check-report.xml'
+                    dependencyCheck(
+                        additionalArguments: "--nvdApiKey ${NVD_KEY} --format CSV --out . --disableOssIndex",
+                        odcInstallation: 'Default'
+                    )
                 }
+
+                dependencyCheckPublisher pattern: 'dependency-check-report.csv'
             }
         }
 
@@ -132,15 +136,21 @@ pipeline {
 
         stage('Archive Reports') {
             steps {
-                archiveArtifacts artifacts: 'service-registry/dependency-check-report.xml',
+                archiveArtifacts artifacts: 'dependency-check-report.csv',
                                  fingerprint: true
+                                 
+                junit allowEmptyResults: true, 
+                      testResults: '**/target/surefire-reports/*.xml'
             }
         }
     }
 
     post {
         success {
-            echo 'SUCCESS: Build + Sonar + OWASP completed'
+            echo 'SUCCESS: Build + Tests + Sonar + OWASP completed (Webhook Triggered)'
+        }
+        unstable {
+            echo 'UNSTABLE: Tests failed or Quality Gate not passed'
         }
         failure {
             echo 'FAILED: Check logs'
