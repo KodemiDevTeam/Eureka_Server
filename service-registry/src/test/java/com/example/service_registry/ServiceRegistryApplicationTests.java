@@ -10,4 +10,9 @@ class ServiceRegistryApplicationTests {
 	void contextLoads() {
 	}
 
+	@Test
+	void mainMethodRuns() {
+		ServiceRegistryApplication.main(new String[]{});
+	}
+
 }
