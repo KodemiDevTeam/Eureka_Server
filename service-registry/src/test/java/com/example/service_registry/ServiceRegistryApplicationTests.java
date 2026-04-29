@@ -19,8 +19,9 @@ class ServiceRegistryApplicationTests {
 
 	@Test
 	void mainMethodRuns() {
-		ServiceRegistryApplication app = new ServiceRegistryApplication();
-		Assertions.assertNotNull(app);
+		Assertions.assertDoesNotThrow(() ->
+			ServiceRegistryApplication.main(new String[]{})
+		);
 	}
 
 }
