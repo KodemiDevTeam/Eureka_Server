@@ -1,13 +1,16 @@
 server:
-  port: 8761
+  port: 0
 
 spring:
   application:
     name: service-registry
+  autoconfigure:
+    exclude:
+      - org.springframework.cloud.netflix.eureka.server.EurekaServerAutoConfiguration
+      - org.springframework.cloud.netflix.eureka.EurekaClientAutoConfiguration
 
 eureka:
-  instance:
-    hostname: localhost
   client:
+    enabled: false
     register-with-eureka: false
     fetch-registry: false
