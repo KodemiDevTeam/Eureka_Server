@@ -31,6 +31,8 @@
 		<spring-cloud.version>2025.1.0</spring-cloud.version>
 		<sonar.coverage.jacoco.xmlReportPaths>${project.build.directory}/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
 		<sonar.maven.plugin.version>4.0.0.4121</sonar.maven.plugin.version>
+		<sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
+		<sonar.dynamicAnalysis>reuseReports</sonar.dynamicAnalysis>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -78,7 +80,7 @@
 					</execution>
 					<execution>
 						<id>report</id>
-						<phase>verify</phase>
+						<phase>test</phase>
 						<goals>
 							<goal>report</goal>
 						</goals>
