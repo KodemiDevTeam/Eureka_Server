@@ -154,11 +154,11 @@ pipeline {
 
                 dir('service-registry') {
 
-                    withSonarQubeEnv('SonarQube2') {
+                    withSonarQubeEnv('sonarscanner') {
 
                         withCredentials([
                             string(
-                                credentialsId: 'sonar-token',
+                                credentialsId: 'sonartk',
                                 variable: 'SONAR_TOKEN'
                             )
                         ]) {
