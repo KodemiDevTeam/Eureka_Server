@@ -1,99 +1,233 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
-	<modelVersion>4.0.0</modelVersion>
-	<parent>
-		<groupId>org.springframework.boot</groupId>
-		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>4.0.2</version>
-		<relativePath/> <!-- lookup parent from repository -->
-	</parent>
-	<groupId>com.example</groupId>
-	<artifactId>service-registry</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
-	<name>service-registry</name>
-	<description>eureka server</description>
-	<url/>
-	<licenses>
-		<license/>
-	</licenses>
-	<developers>
-		<developer/>
-	</developers>
-	<scm>
-		<connection/>
-		<developerConnection/>
-		<tag/>
-		<url/>
-	</scm>
-	<properties>
-		<java.version>17</java.version>
-		<spring-cloud.version>2025.1.0</spring-cloud.version>
-		<sonar.coverage.jacoco.xmlReportPaths>${project.build.directory}/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
-		<sonar.maven.plugin.version>4.0.0.4121</sonar.maven.plugin.version>
-		<sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
-		<sonar.dynamicAnalysis>reuseReports</sonar.dynamicAnalysis>
-	</properties>
-	<dependencies>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-webmvc</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.cloud</groupId>
-			<artifactId>spring-cloud-starter-netflix-eureka-server</artifactId>
-		</dependency>
 
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-webmvc-test</artifactId>
-			<scope>test</scope>
-		</dependency>
-	</dependencies>
-	<dependencyManagement>
-		<dependencies>
-			<dependency>
-				<groupId>org.springframework.cloud</groupId>
-				<artifactId>spring-cloud-dependencies</artifactId>
-				<version>${spring-cloud.version}</version>
-				<type>pom</type>
-				<scope>import</scope>
-			</dependency>
-		</dependencies>
-	</dependencyManagement>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="
+         http://maven.apache.org/POM/4.0.0
+         https://maven.apache.org/xsd/maven-4.0.0.xsd">
 
-	<build>
-		<plugins>
-			<plugin>
-				<groupId>org.springframework.boot</groupId>
-				<artifactId>spring-boot-maven-plugin</artifactId>
-			</plugin>
-			<plugin>
-				<groupId>org.jacoco</groupId>
-				<artifactId>jacoco-maven-plugin</artifactId>
-				<version>0.8.12</version>
-				<executions>
-					<execution>
-						<goals>
-							<goal>prepare-agent</goal>
-						</goals>
-					</execution>
-					<execution>
-						<id>report</id>
-						<phase>test</phase>
-						<goals>
-							<goal>report</goal>
-						</goals>
-						<configuration>
-							<formats>
-								<format>XML</format>
-								<format>HTML</format>
-							</formats>
-						</configuration>
-					</execution>
-				</executions>
-			</plugin>
-		</plugins>
-	</build>
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>4.0.2</version>
+        <relativePath/>
+    </parent>
+
+    <groupId>com.example</groupId>
+    <artifactId>service-registry</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+
+    <name>service-registry</name>
+    <description>Eureka Server</description>
+
+    <properties>
+
+        <java.version>17</java.version>
+
+        <spring-cloud.version>
+            2025.1.0
+        </spring-cloud.version>
+
+        <sonar.maven.plugin.version>
+            4.0.0.4121
+        </sonar.maven.plugin.version>
+
+        <sonar.coverage.jacoco.xmlReportPaths>
+            ${project.build.directory}/site/jacoco/jacoco.xml
+        </sonar.coverage.jacoco.xmlReportPaths>
+
+    </properties>
+
+
+    <!-- ================= DEPENDENCIES ================= -->
+
+    <dependencies>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webmvc</artifactId>
+        </dependency>
+
+
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>
+                spring-cloud-starter-netflix-eureka-server
+            </artifactId>
+        </dependency>
+
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>
+                spring-boot-starter-webmvc-test
+            </artifactId>
+            <scope>test</scope>
+        </dependency>
+
+    </dependencies>
+
+
+    <!-- ================= DEPENDENCY MANAGEMENT ================= -->
+
+    <dependencyManagement>
+
+        <dependencies>
+
+            <dependency>
+
+                <groupId>
+                    org.springframework.cloud
+                </groupId>
+
+                <artifactId>
+                    spring-cloud-dependencies
+                </artifactId>
+
+                <version>
+                    ${spring-cloud.version}
+                </version>
+
+                <type>pom</type>
+
+                <scope>import</scope>
+
+            </dependency>
+
+        </dependencies>
+
+    </dependencyManagement>
+
+
+    <!-- ================= BUILD ================= -->
+
+    <build>
+
+        <plugins>
+
+
+            <!-- SPRING BOOT -->
+
+            <plugin>
+
+                <groupId>
+                    org.springframework.boot
+                </groupId>
+
+                <artifactId>
+                    spring-boot-maven-plugin
+                </artifactId>
+
+            </plugin>
+
+
+            <!-- JACOCO -->
+
+            <plugin>
+
+                <groupId>
+                    org.jacoco
+                </groupId>
+
+                <artifactId>
+                    jacoco-maven-plugin
+                </artifactId>
+
+                <version>
+                    0.8.12
+                </version>
+
+
+                <executions>
+
+
+                    <!-- Attach JaCoCo agent before tests -->
+
+                    <execution>
+
+                        <id>
+                            prepare-agent
+                        </id>
+
+                        <goals>
+
+                            <goal>
+                                prepare-agent
+                            </goal>
+
+                        </goals>
+
+                    </execution>
+
+
+                    <!-- Generate XML + HTML reports -->
+
+                    <execution>
+
+                        <id>
+                            jacoco-report
+                        </id>
+
+                        <phase>
+                            verify
+                        </phase>
+
+                        <goals>
+
+                            <goal>
+                                report
+                            </goal>
+
+                        </goals>
+
+
+                        <configuration>
+
+                            <formats>
+
+                                <format>
+                                    XML
+                                </format>
+
+                                <format>
+                                    HTML
+                                </format>
+
+                            </formats>
+
+                        </configuration>
+
+                    </execution>
+
+
+                </executions>
+
+            </plugin>
+
+
+            <!-- SONAR MAVEN PLUGIN -->
+
+            <plugin>
+
+                <groupId>
+                    org.sonarsource.scanner.maven
+                </groupId>
+
+                <artifactId>
+                    sonar-maven-plugin
+                </artifactId>
+
+                <version>
+                    ${sonar.maven.plugin.version}
+                </version>
+
+            </plugin>
+
+
+        </plugins>
+
+    </build>
 
 </project>
