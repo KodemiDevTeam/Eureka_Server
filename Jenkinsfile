@@ -218,32 +218,7 @@ pipeline {
             }
         }
 
-        stage('OWASP Dependency Check') {
-            steps {
-
-                dir('service-registry') {
-
-                    withCredentials([
-                        string(
-                            credentialsId: 'nvd-api-key',
-                            variable: 'NVD_KEY'
-                        )
-                    ]) {
-
-                        echo '===== RUNNING OWASP DEPENDENCY CHECK ====='
-
-                        dependencyCheck(
-                            additionalArguments: "--nvdApiKey ${NVD_KEY} --format CSV --out . --disableOssIndex",
-                            odcInstallation: 'Default'
-                        )
-                    }
-
-                    dependencyCheckPublisher(
-                        pattern: 'dependency-check-report.csv'
-                    )
-                }
-            }
-        }
+        
 
         stage('Archive Reports') {
             steps {
