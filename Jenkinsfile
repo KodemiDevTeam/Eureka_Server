@@ -14,6 +14,11 @@ pipeline {
     environment {
         SONAR_PROJECT_KEY  = 'Eureka_Server'
         SONAR_PROJECT_NAME = 'Eureka_Server'
+
+        DEPLOY_HOST = '35.159.11.66'
+        DEPLOY_USER = 'ubuntu'
+        DEPLOY_DIR  = '/opt/eureka'
+        APP_PORT    = '8761'
     }
 
     stages {
@@ -75,9 +80,13 @@ pipeline {
                         )
 
                         if (buildStatus != 0) {
+
                             currentBuild.result = 'UNSTABLE'
+
                             echo 'Maven returned a non-zero status. Continuing for report analysis.'
+
                         } else {
+
                             echo 'Maven build lifecycle completed successfully.'
                         }
                     }
@@ -104,8 +113,6 @@ pipeline {
                         echo " VERIFY JACOCO REPORT"
                         echo "======================================"
 
-                        echo "===== SEARCHING FOR JACOCO FILES ====="
-
                         find target -type f \
                             \\( \
                                 -name "jacoco.xml" \
@@ -114,8 +121,6 @@ pipeline {
                                 -o -path "*/jacoco/index.html" \
                             \\) \
                             -print || true
-
-                        echo "===== CHECKING XML REPORT ====="
 
                         if [ -f target/site/jacoco/jacoco.xml ]; then
 
@@ -126,14 +131,10 @@ pipeline {
 
                             echo "ERROR: JaCoCo XML report was not generated"
 
-                            echo "===== TARGET DIRECTORY CONTENT ====="
                             find target -maxdepth 5 -type f -print || true
 
                             exit 1
-
                         fi
-
-                        echo "===== CHECKING HTML REPORT ====="
 
                         if [ -f target/site/jacoco/index.html ]; then
 
@@ -142,7 +143,6 @@ pipeline {
                         else
 
                             echo "WARNING: JaCoCo HTML report not found"
-
                         fi
                     '''
                 }
@@ -197,9 +197,13 @@ pipeline {
                             echo "Quality Gate Status: ${qg.status}"
 
                             if (qg.status != 'OK') {
+
                                 currentBuild.result = 'UNSTABLE'
+
                                 echo 'Quality Gate did not pass.'
+
                             } else {
+
                                 echo 'Quality Gate passed.'
                             }
                         }
@@ -251,12 +255,133 @@ pipeline {
                 )
             }
         }
+
+        stage('Prepare Deployment Artifact') {
+            steps {
+
+                dir('service-registry') {
+
+                    sh '''
+                        echo "======================================"
+                        echo " PREPARING DEPLOYMENT ARTIFACT"
+                        echo "======================================"
+
+                        echo "===== AVAILABLE JARS ====="
+                        find target -maxdepth 1 -type f -name "*.jar" -print
+
+                        JAR_FILE=$(find target -maxdepth 1 \
+                            -type f \
+                            -name "*.jar" \
+                            ! -name "*.original" \
+                            | head -n 1)
+
+                        if [ -z "$JAR_FILE" ]; then
+                            echo "ERROR: No deployable JAR found"
+                            exit 1
+                        fi
+
+                        echo "Selected JAR: $JAR_FILE"
+
+                        cp "$JAR_FILE" target/eureka-server.jar
+
+                        ls -lh target/eureka-server.jar
+                    '''
+                }
+            }
+        }
+
+        stage('Deploy to AWS EC2') {
+            steps {
+
+                sshagent(credentials: ['eureka-deploy-key']) {
+
+                    sh '''
+                        echo "======================================"
+                        echo " DEPLOYING EUREKA TO AWS EC2"
+                        echo "======================================"
+
+                        scp \
+                            -o StrictHostKeyChecking=no \
+                            service-registry/target/eureka-server.jar \
+                            $DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_DIR/eureka-server.jar
+                    '''
+                }
+            }
+        }
+
+        stage('Start Eureka Server') {
+            steps {
+
+                sshagent(credentials: ['eureka-deploy-key']) {
+
+                    sh '''
+                        echo "======================================"
+                        echo " STARTING EUREKA SERVER"
+                        echo "======================================"
+
+                        ssh \
+                            -o StrictHostKeyChecking=no \
+                            $DEPLOY_USER@$DEPLOY_HOST \
+                            "
+                                cd $DEPLOY_DIR
+
+                                if [ -f eureka.pid ]; then
+                                    OLD_PID=\\$(cat eureka.pid)
+
+                                    if kill -0 \\$OLD_PID 2>/dev/null; then
+                                        echo Stopping previous Eureka process
+                                        kill \\$OLD_PID || true
+                                        sleep 5
+                                    fi
+                                fi
+
+                                nohup java -jar eureka-server.jar \
+                                    > eureka.log 2>&1 < /dev/null &
+
+                                echo \\$! > eureka.pid
+
+                                echo Eureka PID:
+                                cat eureka.pid
+                            "
+                    '''
+                }
+            }
+        }
+
+        stage('Deployment Health Check') {
+            steps {
+
+                sshagent(credentials: ['eureka-deploy-key']) {
+
+                    sh '''
+                        echo "======================================"
+                        echo " EUREKA HEALTH CHECK"
+                        echo "======================================"
+
+                        echo "Waiting for Eureka startup..."
+
+                        sleep 30
+
+                        ssh \
+                            -o StrictHostKeyChecking=no \
+                            $DEPLOY_USER@$DEPLOY_HOST \
+                            "
+                                curl --fail --silent \
+                                http://localhost:$APP_PORT \
+                                > /dev/null
+                            "
+
+                        echo "SUCCESS: Eureka Server is responding"
+                    '''
+                }
+            }
+        }
     }
 
     post {
 
         success {
-            echo 'SUCCESS: Build + Tests + Coverage + Sonar + OWASP completed'
+            echo 'SUCCESS: CI pipeline completed and Eureka Server deployed to AWS EC2'
         }
 
         unstable {
@@ -264,7 +389,7 @@ pipeline {
         }
 
         failure {
-            echo 'FAILED: Check the stage logs for the root cause'
+            echo 'FAILED: Check the failed stage logs'
         }
 
         always {
